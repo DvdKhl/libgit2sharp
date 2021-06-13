@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Linq;
 using System.Text;
 using LibGit2Sharp.Tests.TestHelpers;
@@ -53,6 +54,16 @@ namespace LibGit2Sharp.Tests
         [InlineData("utf-32", 20, "FF FE 00 00 31 00 00 00 32 00 00 00 33 00 00 00 34 00 00 00")]
         public void CanGetBlobAsTextWithVariousEncodings(string encodingName, int expectedContentBytes, string expectedUtf7Chars)
         {
+            var isNet5OrAbove = Environment.Version.Major >= 5;
+            if(isNet5OrAbove && encodingName.Equals("utf-7"))
+            {
+                //https://docs.microsoft.com/en-us/dotnet/core/compatibility/core-libraries/5.0/utf-7-code-paths-obsolete
+                //Starting in .NET 5, the Encoding.UTF7 property and UTF7Encoding constructors are obsolete and produce warning SYSLIB0001 (or MSLIB0001 in preview versions). However, to reduce the number of warnings that callers receive when using the UTF7Encoding class, the UTF7Encoding type itself is not marked obsolete.
+                //Additionally, the Encoding.GetEncoding methods treat the encoding name utf-7 and the code page 65000 as unknown. Treating the encoding as unknown causes the method to throw an ArgumentException.
+                return;
+            }
+            
+
             var path = SandboxStandardTestRepo();
             using (var repo = new Repository(path))
             {
@@ -79,8 +90,13 @@ namespace LibGit2Sharp.Tests
                 var text = blob.GetContentText(encoding);
                 Assert.Equal(content, text);
 
-                var utf7Chars = blob.GetContentText(Encoding.UTF7).Select(c => ((int)c).ToString("X2")).ToArray();
-                Assert.Equal(expectedUtf7Chars, string.Join(" ", utf7Chars));
+                if(!isNet5OrAbove)
+                {
+#pragma warning disable SYSLIB0001 // Type or member is obsolete
+                    var utf7Chars = blob.GetContentText(Encoding.UTF7).Select(c => ((int)c).ToString("X2")).ToArray();
+#pragma warning restore SYSLIB0001 // Type or member is obsolete
+                    Assert.Equal(expectedUtf7Chars, string.Join(" ", utf7Chars));
+                }
             }
         }
 
