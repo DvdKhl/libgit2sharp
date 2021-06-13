@@ -70,8 +70,13 @@ namespace LibGit2Sharp.Tests
                 Assert.NotEqual(originalRepo.Info.Path, clonedRepo.Info.Path);
                 Assert.Equal(originalRepo.Head, clonedRepo.Head);
 
-                Assert.Equal(originalRepo.Branches.Count(), clonedRepo.Branches.Count(b => b.IsRemote));
-                Assert.Equal(isCloningAnEmptyRepository ? 0 : 1, clonedRepo.Branches.Count(b => !b.IsRemote));
+                static bool CountBranch(Branch b) => b.IsRemote && !b.CanonicalName.Equals("refs/remotes/origin/HEAD");
+
+                Assert.Equal(originalRepo.Branches.Count(), clonedRepo.Branches.Count(CountBranch));
+                if (isCloningAnEmptyRepository)
+                {
+                    Assert.Equal(0, clonedRepo.Branches.Count(CountBranch));
+                }
 
                 Assert.Equal(originalRepo.Tags.Count(), clonedRepo.Tags.Count());
                 Assert.Single(clonedRepo.Network.Remotes);

@@ -211,11 +211,15 @@ namespace LibGit2Sharp.Tests
 
             var scd = BuildSelfCleaningDirectory();
 
+            var repo = new Repository(Path.GetFullPath(source));
+
             string clonedRepoPath = Repository.Clone(url, scd.DirectoryPath);
 
             using (var clonedRepo = new Repository(clonedRepoPath))
             {
-                Assert.Equal(5, clonedRepo.Branches.Count(b => b.IsRemote));
+                bool CountBranch(Branch b) => b.IsRemote && !b.CanonicalName.Equals("refs/remotes/origin/HEAD");
+
+                Assert.Equal(5, clonedRepo.Branches.Count(CountBranch));
 
                 // Drop one of the branches in the remote repository
                 using (var sourceRepo = new Repository(source))
@@ -226,17 +230,17 @@ namespace LibGit2Sharp.Tests
                 // No pruning when the configuration entry isn't defined
                 Assert.Null(clonedRepo.Config.Get<bool>("fetch.prune"));
                 Commands.Fetch(clonedRepo, "origin", new string[0], null, null);
-                Assert.Equal(5, clonedRepo.Branches.Count(b => b.IsRemote));
+                Assert.Equal(5, clonedRepo.Branches.Count(CountBranch));
 
                 // No pruning when the configuration entry is set to false
                 clonedRepo.Config.Set<bool>("fetch.prune", false);
                 Commands.Fetch(clonedRepo, "origin", new string[0], null, null);
-                Assert.Equal(5, clonedRepo.Branches.Count(b => b.IsRemote));
+                Assert.Equal(5, clonedRepo.Branches.Count(CountBranch));
 
                 // Auto pruning when the configuration entry is set to true
                 clonedRepo.Config.Set<bool>("fetch.prune", true);
                 Commands.Fetch(clonedRepo, "origin", new string[0], null, null);
-                Assert.Equal(4, clonedRepo.Branches.Count(b => b.IsRemote));
+                Assert.Equal(4, clonedRepo.Branches.Count(CountBranch));
             }
         }
 
