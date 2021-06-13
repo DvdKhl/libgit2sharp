@@ -8,6 +8,7 @@ using Xunit;
 
 namespace LibGit2Sharp.Tests
 {
+#if !NET
     public class ShadowCopyFixture : BaseFixture
     {
         [Fact]
@@ -21,8 +22,7 @@ namespace LibGit2Sharp.Tests
             string cachePath = Path.Combine(Constants.TemporaryReposPath, Path.GetRandomFileName());
             Directory.CreateDirectory(cachePath);
 
-            var setup = new AppDomainSetup
-            {
+            var setup = new AppDomainSetup {
                 ApplicationBase = Path.GetDirectoryName(new Uri(assembly.CodeBase).LocalPath),
                 ApplicationName = "ShadowWalker",
                 ShadowCopyFiles = "true",
@@ -37,7 +37,7 @@ namespace LibGit2Sharp.Tests
                 setup, new PermissionSet(PermissionState.Unrestricted));
 
             // Instantiate from the remote domain
-            var wrapper = (Wrapper)domain.CreateInstanceAndUnwrap(assembly.FullName, type.FullName);
+            var wrapper = (Wrapper) domain.CreateInstanceAndUnwrap(assembly.FullName, type.FullName);
 
             // Ensure that LibGit2Sharp correctly probes for the native binaries
             // from the other domain
@@ -108,4 +108,5 @@ namespace LibGit2Sharp.Tests
             }
         }
     }
+#endif
 }
